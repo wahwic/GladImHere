@@ -14,30 +14,18 @@
 const settings = {
     dungeonVersion: "9371",
     minHp: 25,
-    upgradeSkills: false,
-    expeditionsAttack: true,
-    dungeonAttack: true,
-    circusTurmaAttack: true,
-    arenaAttack: false,
+    upgradeSkills: 0,
+    expeditionsAttack: 1,
+    dungeonAttack: 1,
+    circusTurmaAttack: 1,
+    arenaAttack: 1,
     mobGroupPosition: "6",
-    mobPosition: 1,
-    dungeonDifficulty: "dif1"
+    mobPosition: 2,
+    dungeonDifficulty: "dif2"
 };
 
 (function () {
     'use strict';
-
-    function calcSkill(gold, skillCost) {
-        var skills = [],
-            total = 0;
-        skillCost.forEach(function (cost) {
-            while (total + cost <= gold) {
-                skills.push(cost);
-                total += cost;
-            }
-        });
-        return skills;
-    }
 
     function attackMethod(method, url, data, shash) {
         var request = {
@@ -52,7 +40,7 @@ const settings = {
     }
 
     function dungeonAttack(dungeonPage) {
-        if (dungeonPage == true) {
+        if (dungeonPage) {
             var inDungeon = document.querySelectorAll("img[src*='" + settings.dungeonVersion + "/img/dungeons/']").length;
             if (inDungeon) {
                 var attackDungeon = document.querySelectorAll("img[src='" + settings.dungeonVersion + "/img/combatloc.gif']");
@@ -72,7 +60,7 @@ const settings = {
     }
 
     function expeditionsAttack(expeditionsPage) {
-        if (expeditionsPage == true) {
+        if (expeditionsPage) {
             var readyToAttack = document.querySelectorAll(".expedition_cooldown_reduce");
             if (readyToAttack.length == 0) {
                 attack(null, settings.mobGroupPosition, settings.mobPosition, 0, '');
@@ -84,10 +72,12 @@ const settings = {
     }
 
     function arenaAttack(arenaPage) {
-        if (arenaPage == true) {
-            var pickedEnemy = $(".attack:first").attr("onClick").toString();
-            var returnedArray = pickedEnemy.match(/startFight\(this\,\s(.+?)\)/);
-            attackMethod("get", "ajax/doArenaFight.php", "did=" + returnedArray[1], secureHash);
+        if (arenaPage) {
+            // var pickedEnemy = $(".attack:last").attr("onClick").toString();
+            // var returnedArray = pickedEnemy.match(/startFight\(this\,\s(.+?)\)/);
+            // attackMethod("get", "ajax/doArenaFight.php", "did=" + returnedArray[1], secureHash);
+			var enemy = document.querySelector("#own2 > table > tbody > tr:nth-child(2) > td:nth-child(4) > div");
+			enemy.click();
         } else {
             var clickArena = document.querySelectorAll("#cooldown_bar_arena>a")[0];
             clickArena.click();
@@ -95,30 +85,12 @@ const settings = {
     }
 
     function ctAttack(circusPage) {
-        if (circusPage == true) {
+        if (circusPage) {
             var users = document.getElementsByClassName("attack");
             users[0].click();
         } else {
             var clickCircusTurma = document.querySelectorAll("#cooldown_bar_ct>a")[0];
             clickCircusTurma.click();
-        }
-    }
-
-    function upgradeSkills(upgrades, trainingPage, myGold) {
-        if (Boolean(upgrades.length)) {
-            if (trainingPage == true) {
-                var costs = JSON.parse(GM_getValue("upgCost"));
-                var upgradeToDo = upgrades[0];
-                upgrades.shift();
-                var selectedUpgrade = costs.indexOf(upgradeToDo) + 1;
-                var upgradeButton = document.querySelectorAll('a[href*="?mod=training&submod=train&skillToTrain=' + selectedUpgrade + '"]');
-                if (upgradeButton.length) {
-                    upgradeButton[0].click();
-                }
-            } else {
-                var trainingButton = document.querySelectorAll("a[href*='mod=training']");
-                trainingButton[0].click();
-            }
         }
     }
 
@@ -164,7 +136,7 @@ const settings = {
                 minPos = foodData[0].indexOf(item);
             }
         });
-
+		
         return foodData[1][minPos];
     }
 
@@ -194,11 +166,39 @@ const settings = {
             async: false,
         });
     }
+	
+    // function upgradeSkills(upgrades, trainingPage, myGold) {
+        // if (Boolean(upgrades.length)) {
+            // if (trainingPage == true) {
+                // var costs = JSON.parse(GM_getValue("upgCost"));
+                // var upgradeToDo = upgrades[0];
+                // upgrades.shift();
+                // var selectedUpgrade = costs.indexOf(upgradeToDo) + 1;
+                // var upgradeButton = document.querySelectorAll('a[href*="?mod=training&submod=train&skillToTrain=' + selectedUpgrade + '"]');
+                // if (upgradeButton.length) {
+                    // upgradeButton[0].click();
+                // }
+            // } else {
+                // var trainingButton = document.querySelectorAll("a[href*='mod=training']");
+                // trainingButton[0].click();
+            // }
+        // }
+    // }
+	
+    // function calcSkill(gold, skillCost) {
+        // var skills = [],
+            // total = 0;
+        // skillCost.forEach(function (cost) {
+            // while (total + cost <= gold) {
+                // skills.push(cost);
+                // total += cost;
+            // }
+        // });
+        // return skills;
+    // }
 
-    //current page data
     var myLoc = location.toString();
     var fullLoc = location.origin.toString() + location.pathname.toString();
-    // ------------------
     var myGold = $("#sstat_gold_val").text().trim().replace('.', '').toInt();
     var circusPage = Boolean(myLoc.match(/mod=arena&submod=serverArena&aType=3/));
     var arenaPage = Boolean(myLoc.match(/.+index\.php\?(mod\=arena)\&sh\=.+$/));
@@ -206,65 +206,60 @@ const settings = {
     var dungeonPage = Boolean(myLoc.match(/mod=dungeon&loc=/));
     var trainingPage = Boolean(myLoc.match(/mod=training/));
     var homepage = Boolean(myLoc.match(/mod=overview/));
-    var rnadominterval = (Math.random() * 3000) + 1000
-
-    var selfHp = document.getElementById("header_values_hp_bar_fill").style.width.toInt();
-
-    if (selfHp <= settings.minHp) {
-        if (homepage == true) {
-            startEatingIfFoodExists();
-        } else {
-            var homeButton = document.querySelectorAll("a[href*='mod=overview']")[0];
-            homeButton.click();
-        }
-    }
-    // --REPEAT--
-    setInterval(function () {
-        if (trainingPage == true) {
-            var trainingCosts = $(".training_costs").map(function () {
-                return $(this).text().trim().replace('.', '').toInt();
-            }).get();
-            var upgradePlan = calcSkill(myGold, trainingCosts);
-            GM_setValue("upgPlan", JSON.stringify(upgradePlan));
-            GM_setValue("upgCost", JSON.stringify(trainingCosts));
-        } else {
-            var trainingButton = document.querySelectorAll("a[href*='mod=training']")[0];
-            trainingButton.click();
-        }
-    }, 45000);
+    var rnadominterval = (Math.random() * 3000) + 1000;
+	var homeButton = document.querySelectorAll("a[href*='mod=overview']")[0];
+	
+	// --REPEAT--
+    // setInterval(function () {
+        // if (trainingPage == true) {
+            // var trainingCosts = $(".training_costs").map(function () {
+                // return $(this).text().trim().replace('.', '').toInt();
+            // }).get();
+            // var upgradePlan = calcSkill(myGold, trainingCosts);
+            // GM_setValue("upgPlan", JSON.stringify(upgradePlan));
+            // GM_setValue("upgCost", JSON.stringify(trainingCosts));
+        // } else {
+            // var trainingButton = document.querySelectorAll("a[href*='mod=training']")[0];
+            // trainingButton.click();
+        // }
+    // }, 45000);
+	
     setInterval(function () {
         var circusTurmaLoad = document.getElementById("cooldown_bar_fill_ct").style.width;
         var arenaLoad = document.getElementById("cooldown_bar_fill_arena").style.width;
         var expeditionsLoad = document.getElementById("cooldown_bar_fill_expedition").style.width;
         var dungeonLoad = document.getElementById("cooldown_bar_fill_dungeon").style.width;
         var selfHp = document.getElementById("header_values_hp_bar_fill").style.width.toInt();
+	
+        // if(settings.upgradeSkills) {
+            // var upgrades = JSON.parse(GM_getValue("upgPlan") || "[]");
 
-        if(settings.upgradeSkills) {
-            var upgrades = JSON.parse(GM_getValue("upgPlan") || "[]");
+            // upgrades = upgrades.filter(function (item, i, ar) { return ar.indexOf(item) === i; });
+            // if (upgrades[0] > myGold) {
+                // GM_setValue("upgPlan", JSON.stringify([]));
+                // console.log("RESET UPGRADE PLAN");
+            // }
 
-            upgrades = upgrades.filter(function (item, i, ar) { return ar.indexOf(item) === i; });
-            if (upgrades[0] > myGold) {
-                GM_setValue("upgPlan", JSON.stringify([]));
-                console.log("RESET UPGRADE PLAN");
-            }
-
-            upgradeSkills(upgrades, trainingPage, myGold);
-        }
-
-        if (selfHp > settings.minHp) {
+            // upgradeSkills(upgrades, trainingPage, myGold);
+        // }
+		if (selfHp <= settings.minHp) {	
+			if(!homepage){
+				homeButton.click();
+			}
+			startEatingIfFoodExists();
+		} else {
             if (settings.expeditionsAttack && expeditionsLoad == "100%") {
                 expeditionsAttack(expeditionsPage);
             }
             if (settings.arenaAttack && arenaLoad == "100%") {
                 arenaAttack(arenaPage)
             }
-        }else{
-            if (settings.dungeonAttack && dungeonLoad == "100%") {
-                dungeonAttack(dungeonPage);
-            }
-            if (settings.circusTurmaAttack && circusTurmaLoad == "100%") {
-                ctAttack(circusPage);
-            }
+			if (settings.dungeonAttack && dungeonLoad == "100%") {
+				dungeonAttack(dungeonPage);
+			}
+			if (settings.circusTurmaAttack && circusTurmaLoad == "100%") {
+				ctAttack(circusPage);
+			}
         }
     }, rnadominterval);
 })();
