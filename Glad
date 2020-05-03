@@ -4,8 +4,9 @@
 // @description  Gladiatus stuff
 // @author       Wah
 // @version      1.1
-// @match        https://*.gladiatus.gameforge.com/*
+// @downloadURL  https://github.com/wahwic/GladImHere/raw/master/Glad
 // @updateURL    https://github.com/wahwic/GladImHere/raw/master/Glad
+// @match        https://*.gladiatus.gameforge.com/*
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js
 // @icon         https://i.imgur.com/loWkqOF.jpg
 // @grant        GM_setValue
